@@ -1,0 +1,78 @@
+debug = 0
+
+# leveld of parent directory to travel up looking for .editorconfig
+dir_level = 5
+
+# start searching for .editorconfig
+configfile  = ".editorconfig"
+filepath = $file_path
+for (i=0; i<dir_level; i++) {
+    if (i==0) {
+        dir = ""
+    } else {
+        dir = "../"
+    }
+
+    filepath = filepath dir
+    fullpath = filepath configfile
+    # dialog("read file: " fullpath)
+    config = read_file(fullpath)
+    if ($read_status == 1) {
+        break
+    }
+}
+
+if ($read_status == 0) {
+    dialog("can't find " configfile " in all parent directories")
+    return
+}
+
+#dialog(config)
+
+# check tab_width
+regexp = "tab_width\\s*=\\s*(\\d+)"
+found = search_string(config, regexp, 0, "regex")
+if (found != -1) {
+    line = substring(config, found, $search_end)
+    captured = replace_in_string(line, regexp, "\\1", "regex")
+    if (debug)
+        dialog("tab_width: " captured)
+
+    set_tab_dist(captured)
+}
+
+# check indent_size
+indent_size = 4
+regexp = "indent_size\\s*=\\s*(\\d+)"
+found = search_string(config, regexp, 0, "regex")
+if (found != -1) {
+    line = substring(config, found, $search_end)
+    captured = replace_in_string(line, regexp, "\\1", "regex")
+    if (debug)
+        dialog("indent_size: " captured)
+
+    indent_size = captured
+}
+
+# check indent_style
+regexp = "indent_style\\s*=\\s*(\\w+)"
+found = search_string(config, regexp, 0, "regex")
+if (found != -1) {
+    line = substring(config, found, $search_end)
+    captured = replace_in_string(line, regexp, "\\1", "regex")
+    if (debug)
+        dialog("indent_style: " captured)
+    
+    if (tolower(captured) == "space") {
+        set_em_tab_dist(indent_size)
+        #set_tab_dist(indent_size)
+        set_use_tabs(0)
+    }
+    else if(tolower(captured) == "tab") {
+        set_em_tab_dist(0)
+        set_tab_dist(indent_size)
+        set_use_tabs(1)
+    } else {
+        dialog("Unknown indent_style: " captured)
+    }
+}
