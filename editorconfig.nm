@@ -50,6 +50,21 @@ while (1) {
 
     ### parse line and process per data found
 
+    # skip comment and blank lines
+    comment = search_string(line, "^\\s*[#;]", 0, "regex")
+    if (comment != -1) {
+        if (debug >= 2)
+            t_print("line is comment\n")
+        continue
+    }
+
+    blanks = search_string(line, "^\\s*[\r\n]", 0, "regex")
+    if (blanks != -1) {
+        if (debug >= 2)
+            t_print("line is blank\n")
+        continue
+    }
+
     # check sections
     regexp = "\\[(.+)\\]"
     found = search_string(line, regexp, 0, "regex")
