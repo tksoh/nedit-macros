@@ -1,6 +1,6 @@
-debug = 0
+debug = 1       # print debugging messages on terminal
 
-# leveld of parent directory to travel up looking for .editorconfig
+# levels of parent directory to travel up looking for .editorconfig
 dir_level = 5
 
 # start searching for .editorconfig
@@ -15,7 +15,7 @@ for (i=0; i<dir_level; i++) {
 
     filepath = filepath dir
     fullpath = filepath configfile
-    # dialog("read file: " fullpath)
+    # t_print("read file: " fullpath "\n")
     config = read_file(fullpath)
     if ($read_status == 1) {
         break
@@ -23,56 +23,158 @@ for (i=0; i<dir_level; i++) {
 }
 
 if ($read_status == 0) {
-    dialog("can't find " configfile " in all parent directories")
+    t_print("can't find " configfile " in all parent directories\n")
     return
 }
 
 #dialog(config)
 
-# check tab_width
-regexp = "tab_width\\s*=\\s*(\\d+)"
-found = search_string(config, regexp, 0, "regex")
-if (found != -1) {
+# start processing .editorconfig data
+file_matched = 0
+line_num = 0
+while (1) {
+    regexp = "^(.*)(\\r\\n|\\r|\\n)"
+    found = search_string(config, regexp, 0, "regex")
+    if (found == -1)
+        break
+
+    line_num++
+
+    # extract current and trim config data for next loop
     line = substring(config, found, $search_end)
-    captured = replace_in_string(line, regexp, "\\1", "regex")
-    if (debug)
-        dialog("tab_width: " captured)
-
-    set_tab_dist(captured)
-}
-
-# check indent_size
-indent_size = 4
-regexp = "indent_size\\s*=\\s*(\\d+)"
-found = search_string(config, regexp, 0, "regex")
-if (found != -1) {
-    line = substring(config, found, $search_end)
-    captured = replace_in_string(line, regexp, "\\1", "regex")
-    if (debug)
-        dialog("indent_size: " captured)
-
-    indent_size = captured
-}
-
-# check indent_style
-regexp = "indent_style\\s*=\\s*(\\w+)"
-found = search_string(config, regexp, 0, "regex")
-if (found != -1) {
-    line = substring(config, found, $search_end)
-    captured = replace_in_string(line, regexp, "\\1", "regex")
-    if (debug)
-        dialog("indent_style: " captured)
-    
-    if (tolower(captured) == "space") {
-        set_em_tab_dist(indent_size)
-        #set_tab_dist(indent_size)
-        set_use_tabs(0)
+    config = substring(config, $search_end)
+    if (debug >= 2) {
+        stripped = replace_in_string(line, "[\\r\\n]+", "\n", "regex")
+        t_print("LINE #" line_num ": " stripped)
     }
-    else if(tolower(captured) == "tab") {
-        set_em_tab_dist(0)
-        set_tab_dist(indent_size)
-        set_use_tabs(1)
-    } else {
-        dialog("Unknown indent_style: " captured)
+
+    ### parse line and process per data found
+
+    # check sections
+    regexp = "\\[(.+)\\]"
+    found = search_string(line, regexp, 0, "regex")
+    if (found != -1) {
+        # extract glob pattern for conversion to regexp
+        section = substring(line, found, $search_end)
+        if (debug >= 1)
+            t_print("section: " section "\n")
+        glob = replace_in_string(section, regexp, "\\1", "regex")
+
+        # convert regular globs
+        replaced = replace_in_string(glob, ".", "\\.")
+        if (replaced != "") {
+            glob = replaced
+            if (debug >= 2)
+                t_print("glob (.): " glob "\n")
+        }
+        replaced = replace_in_string(glob, "?", ".")
+        if (replaced != "") {
+            glob = replaced
+            if (debug >= 2)
+                t_print("glob (?): " glob)
+        }
+        replaced = replace_in_string(glob, "*", ".*?")
+        if (replaced != "") {
+            glob = replaced
+            if (debug >= 2)
+                t_print("glob (*): " glob "\n")
+        }
+
+        # convert brace extention
+        regexp = "(.*)\\{(.+)\\}(.*)"
+        found = search_string(glob, regexp, 0, "regex")
+        if (found != -1) {
+            # extract content inside {}
+            braced = replace_in_string(glob, regexp, "\\2", "regex")
+            if (debug >= 2)
+                t_print("braced: " braced)
+            # replace commas with vertical bar
+            comma2or = replace_in_string(braced, ",", "|")
+
+            # replace [] with regexp
+            braced_regexp = "\\1<(" comma2or ")>\\3"
+            replaced = replace_in_string(glob, regexp, braced_regexp, "regex")
+            if (replaced != "") {
+                if (debug >= 2)
+                    t_print("braced regexp: " replaced "\n")
+                glob = replaced
+            }
+            else {
+                if (debug >= 2)
+                    t_print("not match" "\n")
+            }
+        }
+
+        # wrap up regexp
+        replaced = replace_in_string(glob, "(.*)", "^\\1$", "regex")
+        if (replaced != "") {
+            glob = replaced
+            if (debug >= 2)
+                t_print("glob: " glob "\n")
+        }
+
+        # check file name again glob pattern
+        found = search_string($file_name, glob, 0, "regex")
+        if (found == -1) {
+            if (debug >= 1)
+                t_print($file_name " not matched \n")
+            file_matched = 0
+        }
+        else {
+            if (debug >= 1)
+                t_print($file_name " matched \n")
+            file_matched = 1
+        }
+    }
+
+    # apply properties if file matches section pattern
+    if (file_matched) {
+        # check tab_width
+        regexp = "tab_width\\s*=\\s*(\\d+)"
+        found = search_string(line, regexp, 0, "regex")
+        if (found != -1) {
+            pair = substring(line, found, $search_end)
+            captured = replace_in_string(pair, regexp, "\\1", "regex")
+            if (debug >= 1)
+                t_print("tab_width: " captured "\n")
+
+            set_tab_dist(captured)
+        }
+
+        # check indent_size
+        indent_size = 4
+        regexp = "indent_size\\s*=\\s*(\\d+)"
+        found = search_string(line, regexp, 0, "regex")
+        if (found != -1) {
+            pair = substring(line, found, $search_end)
+            captured = replace_in_string(pair, regexp, "\\1", "regex")
+            if (debug >= 1)
+                t_print("indent_size: " captured "\n")
+
+            indent_size = captured
+        }
+
+        # check indent_style
+        regexp = "indent_style\\s*=\\s*(\\w+)"
+        found = search_string(line, regexp, 0, "regex")
+        if (found != -1) {
+            pair = substring(line, found, $search_end)
+            captured = replace_in_string(pair, regexp, "\\1", "regex")
+            if (debug >= 1)
+                t_print("indent_style: " captured "\n")
+
+            if (tolower(captured) == "space") {
+                set_em_tab_dist(indent_size)
+                #set_tab_dist(indent_size)
+                set_use_tabs(0)
+            }
+            else if(tolower(captured) == "tab") {
+                set_em_tab_dist(0)
+                set_tab_dist(indent_size)
+                set_use_tabs(1)
+            } else {
+                t_print("Unknown indent_style: " captured "\n")
+            }
+        }
     }
 }
