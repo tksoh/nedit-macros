@@ -1,3 +1,9 @@
+##########################################################
+# EditorConfig macro for NEdit
+#
+# By TKSoh (teekaysoh@gmail.com), Jan-2021
+##########################################################
+
 debug = 1       # print debugging messages on terminal
 
 # levels of parent directory to travel up looking for .editorconfig
