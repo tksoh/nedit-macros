@@ -130,6 +130,28 @@ while (1) {
             }
         }
 
+        # convert []
+        regexp = "(.*)\\[(.+)\\](.*)"
+        found = search_string(glob, regexp, 0, "regex")
+        if (found != -1) {
+            # extract content inside {}
+            braced = replace_in_string(glob, regexp, "\\2", "regex")
+            if (debug >= 2)
+                t_print("brace: " braced "\n")
+
+            # convert '!'
+            carrot = replace_in_string(braced, "!", "^")
+            if (carrot != "") {
+                braced_regexp = "\\1[" carrot "]\\3"
+                replaced = replace_in_string(glob, regexp, braced_regexp, "regex")
+                if (replaced != "") {
+                    if (debug >= 2)
+                        t_print("glob (brace): " replaced "\n")
+                    glob = replaced
+                }
+            }
+        }
+
         # wrap up regexp
         replaced = replace_in_string(glob, "(.*)", "^\\1$", "regex")
         if (replaced != "") {
