@@ -77,9 +77,9 @@ while (1) {
     if (found != -1) {
         # extract glob pattern for conversion to regexp
         section = substring(line, found, $search_end)
-        if (debug >= 1)
-            t_print("section: " section "\n")
         glob = replace_in_string(section, regexp, "\\1", "regex")
+        if (debug >= 1)
+            t_print("glob: " glob "\n")
 
         # convert regular globs
         replaced = replace_in_string(glob, ".", "\\.")
@@ -108,7 +108,8 @@ while (1) {
             # extract content inside {}
             braced = replace_in_string(glob, regexp, "\\2", "regex")
             if (debug >= 2)
-                t_print("braced: " braced)
+                t_print("brace: " braced "\n")
+
             # replace commas with vertical bar
             comma2or = replace_in_string(braced, ",", "|")
 
@@ -117,7 +118,7 @@ while (1) {
             replaced = replace_in_string(glob, regexp, braced_regexp, "regex")
             if (replaced != "") {
                 if (debug >= 2)
-                    t_print("braced regexp: " replaced "\n")
+                    t_print("glob (brace): " replaced "\n")
                 glob = replaced
             }
             else {
@@ -131,7 +132,7 @@ while (1) {
         if (replaced != "") {
             glob = replaced
             if (debug >= 2)
-                t_print("glob: " glob "\n")
+                t_print("glob (wrap): " glob "\n")
         }
 
         # check file name again glob pattern
