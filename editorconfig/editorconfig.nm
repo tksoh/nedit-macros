@@ -42,6 +42,7 @@ if ($read_status == 0) {
 file_matched = 0
 line_num = 0
 use_num_range = 0
+
 while (1) {
     regexp = "^(.*)(\\r\\n|\\r|\\n)"
     found = search_string(config, regexp, 0, "regex")
@@ -53,9 +54,9 @@ while (1) {
     # extract current and trim config data for next loop
     line = substring(config, found, $search_end)
     config = substring(config, $search_end)
+    line = replace_in_string(line, "[\\r\\n]+", "", "regex")    # chomp
     if (debug >= 2) {
-        stripped = replace_in_string(line, "[\\r\\n]+", "\n", "regex")
-        t_print("LINE #" line_num ": " stripped)
+        t_print("LINE #" line_num ": " line "\n")
     }
 
     ### parse line and process per data found
@@ -196,54 +197,56 @@ while (1) {
         }
     }
 
-    # apply properties if file matches section pattern
-    if (file_matched) {
-        # check tab_width
-        regexp = "tab_width\\s*=\\s*(\\d+)"
-        found = search_string(line, regexp, 0, "regex")
-        if (found != -1) {
-            pair = substring(line, found, $search_end)
-            captured = replace_in_string(pair, regexp, "\\1", "regex")
-            if (debug >= 1)
-                t_print("tab_width: " captured "\n")
+    # check & apply properties if file matches section pattern
+    if (!file_matched)
+        continue
 
-            set_tab_dist(captured)
+    # get property pairs
+    regexp = "(\\w+)\\s*=\\s*(.+)"
+    found = search_string(line, regexp, 0, "regex")
+    if (found != -1) {
+        key = replace_in_string(line, regexp, "\\1", "regex")
+        value = replace_in_string(line, regexp, "\\2", "regex")
+        if (debug >= 1)
+            t_print("property: " key " => " value "\n")
+    }
+    else {
+        continue
+    }
+
+    # apply properties
+    if (key == "tab_width") {
+        if (debug >= 1)
+            t_print("set " key " to " value "\n")
+
+        set_tab_dist(value)
+    }
+    else if (key == "indent_size") {
+        if (debug >= 1)
+            t_print("set " key " to " value "\n")
+
+        if ($em_tab_dist > 0)
+            set_em_tab_dist(value)
+        else
+            set_tab_dist(value)
+    }
+    else if (key == "indent_style") {
+        if (debug >= 1)
+            t_print("set " key " to " value "\n")
+
+        indent_style = tolower(value)
+        if (indent_style == "space") {
+            if ($em_tab_dist <= 0)
+                set_em_tab_dist($tab_dist)
+            set_use_tabs(0)
         }
-
-        # check indent_size
-        indent_size = 4
-        regexp = "indent_size\\s*=\\s*(\\d+)"
-        found = search_string(line, regexp, 0, "regex")
-        if (found != -1) {
-            pair = substring(line, found, $search_end)
-            captured = replace_in_string(pair, regexp, "\\1", "regex")
-            if (debug >= 1)
-                t_print("indent_size: " captured "\n")
-
-            indent_size = captured
-        }
-
-        # check indent_style
-        regexp = "indent_style\\s*=\\s*(\\w+)"
-        found = search_string(line, regexp, 0, "regex")
-        if (found != -1) {
-            pair = substring(line, found, $search_end)
-            captured = replace_in_string(pair, regexp, "\\1", "regex")
-            if (debug >= 1)
-                t_print("indent_style: " captured "\n")
-
-            if (tolower(captured) == "space") {
-                set_em_tab_dist(indent_size)
-                #set_tab_dist(indent_size)
-                set_use_tabs(0)
-            }
-            else if(tolower(captured) == "tab") {
-                set_em_tab_dist(0)
-                set_tab_dist(indent_size)
-                set_use_tabs(1)
-            } else {
-                t_print("Unknown indent_style: " captured "\n")
-            }
+        else if (indent_style == "tab") {
+            if ($em_tab_dist > 0)
+                set_tab_dist($em_tab_dist)
+            set_em_tab_dist(0)  # use hard tab to indent
+            set_use_tabs(1)
+        } else {
+            t_print("Unknown indent_style: " indent_style "\n")
         }
     }
 }
