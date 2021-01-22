@@ -41,6 +41,7 @@ if ($read_status == 0) {
 # start processing .editorconfig data
 file_matched = 0
 line_num = 0
+use_num_range = 0
 while (1) {
     regexp = "^(.*)(\\r\\n|\\r|\\n)"
     found = search_string(config, regexp, 0, "regex")
@@ -84,26 +85,6 @@ while (1) {
         if (debug >= 1)
             t_print("glob: " glob "\n")
 
-        # convert regular globs
-        replaced = replace_in_string(glob, ".", "\\.")
-        if (replaced != "") {
-            glob = replaced
-            if (debug >= 2)
-                t_print("glob (.): " glob "\n")
-        }
-        replaced = replace_in_string(glob, "?", ".")
-        if (replaced != "") {
-            glob = replaced
-            if (debug >= 2)
-                t_print("glob (?): " glob)
-        }
-        replaced = replace_in_string(glob, "*", ".*?")
-        if (replaced != "") {
-            glob = replaced
-            if (debug >= 2)
-                t_print("glob (*): " glob "\n")
-        }
-
         # convert brace extention
         regexp = "(.*)\\{(.+)\\}(.*)"
         found = search_string(glob, regexp, 0, "regex")
@@ -113,21 +94,28 @@ while (1) {
             if (debug >= 2)
                 t_print("brace: " braced "\n")
 
+            # capture number range
+            use_num_range = 0
+            num_regexp = "^([+-]?\\d+)\\.\\.([+-]?\\d+)"
+            num_range = search_string(braced, num_regexp, 0, "regex")
+            if (num_range != -1) {
+                use_num_range = 1
+                start_num = replace_in_string(braced, num_regexp, "\\1", "regex")
+                stop_num = replace_in_string(braced, num_regexp, "\\2", "regex")
+                braced_regexp = "\\1(\\\\d+)\\3"
+                glob = replace_in_string(glob, regexp, braced_regexp, "regex")
+            }
+
             # replace commas with vertical bar
             comma2or = replace_in_string(braced, ",", "|")
+            if (comma2or != "") {
+                # replace [] with regexp
+                braced_regexp = "\\1<(" comma2or ")>\\3"
+                glob = replace_in_string(glob, regexp, braced_regexp, "regex")
+            }
 
-            # replace [] with regexp
-            braced_regexp = "\\1<(" comma2or ")>\\3"
-            replaced = replace_in_string(glob, regexp, braced_regexp, "regex")
-            if (replaced != "") {
-                if (debug >= 2)
-                    t_print("glob (brace): " replaced "\n")
-                glob = replaced
-            }
-            else {
-                if (debug >= 2)
-                    t_print("not match" "\n")
-            }
+            if (debug >= 2)
+                t_print("glob (brace): " glob "\n")
         }
 
         # convert []
@@ -152,6 +140,26 @@ while (1) {
             }
         }
 
+        # convert regular globs
+        replaced = replace_in_string(glob, ".", "\\.")
+        if (replaced != "") {
+            glob = replaced
+            if (debug >= 2)
+                t_print("glob (.): " glob "\n")
+        }
+        replaced = replace_in_string(glob, "?", ".")
+        if (replaced != "") {
+            glob = replaced
+            if (debug >= 2)
+                t_print("glob (?): " glob)
+        }
+        replaced = replace_in_string(glob, "*", ".*?")
+        if (replaced != "") {
+            glob = replaced
+            if (debug >= 2)
+                t_print("glob (*): " glob "\n")
+        }
+
         # wrap up regexp
         replaced = replace_in_string(glob, "(.*)", "^\\1$", "regex")
         if (replaced != "") {
@@ -163,14 +171,28 @@ while (1) {
         # check file name again glob pattern
         found = search_string($file_name, glob, 0, "regex")
         if (found == -1) {
-            if (debug >= 1)
-                t_print($file_name " not matched \n")
             file_matched = 0
         }
         else {
-            if (debug >= 1)
+            if (use_num_range) {
+                num = replace_in_string($file_name, glob, "\\1", "regex")
+                if (debug >= 2)
+                    t_print("checking if " num " in " start_num ".." stop_num "\n")
+                if (num >= start_num && num <= stop_num)
+                    file_matched = 1
+                else
+                    file_matched = 0
+            }
+            else {
+                file_matched = 1
+            }
+        }
+
+        if (debug >= 1) {
+            if (file_matched)
                 t_print($file_name " matched \n")
-            file_matched = 1
+            else
+                t_print($file_name " not matched \n")
         }
     }
 
