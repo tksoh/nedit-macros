@@ -4,7 +4,7 @@
 # Syntax reference:
 #    https://editorconfig-specification.readthedocs.io/
 #
-# By TKSoh (teekaysoh@gmail.com), Jan-2021
+# By TK Soh (teekaysoh@gmail.com), Jan-2021
 ##########################################################
 
 debug = 1       # print debugging messages on terminal
