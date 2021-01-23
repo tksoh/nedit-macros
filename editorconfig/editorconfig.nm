@@ -83,7 +83,7 @@ while (1) {
         # extract glob pattern for conversion to regexp
         section = substring(line, found, $search_end)
         glob = replace_in_string(section, regexp, "\\1", "regex")
-        if (debug >= 1)
+        if (debug >= 2)
             t_print("glob: " glob "\n")
 
         # convert brace extention
@@ -191,9 +191,9 @@ while (1) {
 
         if (debug >= 1) {
             if (file_matched)
-                t_print($file_name " matched \n")
+                t_print($file_name " matches " section "\n")
             else
-                t_print($file_name " not matched \n")
+                t_print($file_name " does not match " section "\n")
         }
     }
 
@@ -207,7 +207,7 @@ while (1) {
     if (found != -1) {
         key = replace_in_string(line, regexp, "\\1", "regex")
         value = replace_in_string(line, regexp, "\\2", "regex")
-        if (debug >= 1)
+        if (debug >= 2)
             t_print("property: " key " => " value "\n")
     }
     else {
