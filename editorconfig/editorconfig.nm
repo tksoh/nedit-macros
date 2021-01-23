@@ -169,7 +169,7 @@ while (1) {
                 t_print("glob (wrap): " glob "\n")
         }
 
-        # check file name again glob pattern
+        # check file name against glob pattern
         found = search_string($file_name, glob, 0, "regex")
         if (found == -1) {
             file_matched = 0
