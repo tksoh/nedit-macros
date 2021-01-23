@@ -9,29 +9,32 @@
 
 debug = 1       # print debugging messages on terminal
 
-# levels of parent directory to travel up looking for .editorconfig
-dir_level = 10
+# gather parent directories to check for .editorconfig
+path = replace_in_string($file_path, "/$", "" , "regex", "copy")
+dir_list = split(path, "/")
+path = ""
+for (i=0; i<dir_list[]; i++) {
+    fn = dir_list[i]
+    path = path fn "/"
+    if (debug >= 3)
+        t_print("Dir level " i ": " fn " => " path "\n")
+    path_list[i] = path
+}
 
 # start searching for .editorconfig
 configfile  = ".editorconfig"
-filepath = $file_path
 file_count = 0
 file_list[-1] = ""      # initialize array
-for (i=0; i<dir_level; i++) {
-    if (i==0) {
-        dir = ""
-    } else {
-        dir = "../"
-    }
-
-    filepath = filepath dir
-    fullpath = filepath configfile
+for (i=0; i<path_list[]; i++) {
+    fn = path_list[] - i -1
+    fullpath = path_list[fn] configfile
     if (debug >= 2)
         t_print("checking file: " fullpath "\n")
+
     config = read_file(fullpath)
     if ($read_status == 1) {
         if (debug >= 2)
-            t_print("Found: " fullpath "\n")
+            t_print("- Found\n")
         file_list[file_count] = fullpath
         file_count++
 
@@ -39,7 +42,7 @@ for (i=0; i<dir_level; i++) {
         root = search_string(config, "^\\s*root\\s*=\\strue>", 0, "regex")
         if (root != -1) {
             if (debug >= 2)
-                t_print("File is root: " fullpath "\n")
+                t_print("- root=true\n")
             break
         }
     }
@@ -49,8 +52,7 @@ for (i=0; i<dir_level; i++) {
 delete file_list[-1]    # remove init data
 
 if (file_count < 1) {
-    t_print("\ncan't find " configfile " in all " dir_level \
-            " levels of parent directories\n")
+    t_print("\nCan't find " configfile " in all parent directories\n")
     return
 }
 
