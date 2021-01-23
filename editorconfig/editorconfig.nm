@@ -63,217 +63,216 @@ for (i=0; i<file_count; i++) {
     # read config data
     config = read_file(config_path)
 
-# start processing .editorconfig data
-file_matched = 0
-line_num = 0
-use_num_range = 0
+    # start processing .editorconfig data
+    file_matched = 0
+    line_num = 0
+    use_num_range = 0
 
-while (1) {
-    regexp = "^(.*)(\\r\\n|\\r|\\n)"
-    found = search_string(config, regexp, 0, "regex")
-    if (found == -1)
-        break
+    while (1) {
+        regexp = "^(.*)(\\r\\n|\\r|\\n)"
+        found = search_string(config, regexp, 0, "regex")
+        if (found == -1)
+            break
 
-    line_num++
+        line_num++
 
-    # extract current and trim config data for next loop
-    line = substring(config, found, $search_end)
-    config = substring(config, $search_end)
-    line = replace_in_string(line, "[\\r\\n]+", "", "regex")    # chomp
-    if (debug >= 2) {
-        t_print("LINE #" line_num ": " line "\n")
-    }
-
-    ### parse line and process per data found
-
-    # skip comment and blank lines
-    comment = search_string(line, "^\\s*[#;]", 0, "regex")
-    if (comment != -1) {
-        if (debug >= 2)
-            t_print("line is comment\n")
-        continue
-    }
-
-    blanks = search_string(line, "^\\s*[\r\n]", 0, "regex")
-    if (blanks != -1) {
-        if (debug >= 2)
-            t_print("line is blank\n")
-        continue
-    }
-
-    # check sections
-    regexp = "\\[(.+)\\]"
-    found = search_string(line, regexp, 0, "regex")
-    if (found != -1) {
-        # extract glob pattern for conversion to regexp
-        section = substring(line, found, $search_end)
-        glob = replace_in_string(section, regexp, "\\1", "regex")
-        if (debug >= 2)
-            t_print("glob: " glob "\n")
-
-        # convert brace extention
-        regexp = "(.*)\\{(.+)\\}(.*)"
-        found = search_string(glob, regexp, 0, "regex")
-        if (found != -1) {
-            # extract content inside {}
-            braced = replace_in_string(glob, regexp, "\\2", "regex")
-            if (debug >= 2)
-                t_print("brace: " braced "\n")
-
-            # capture number range
-            use_num_range = 0
-            num_regexp = "^([+-]?\\d+)\\.\\.([+-]?\\d+)"
-            num_range = search_string(braced, num_regexp, 0, "regex")
-            if (num_range != -1) {
-                use_num_range = 1
-                start_num = replace_in_string(braced, num_regexp, "\\1", "regex")
-                stop_num = replace_in_string(braced, num_regexp, "\\2", "regex")
-                braced_regexp = "\\1(\\\\d+)\\3"
-                glob = replace_in_string(glob, regexp, braced_regexp, "regex")
-            }
-
-            # replace commas with vertical bar
-            comma2or = replace_in_string(braced, ",", "|")
-            if (comma2or != "") {
-                # replace [] with regexp
-                braced_regexp = "\\1<(" comma2or ")>\\3"
-                glob = replace_in_string(glob, regexp, braced_regexp, "regex")
-            }
-
-            if (debug >= 2)
-                t_print("glob (brace): " glob "\n")
+        # extract current and trim config data for next loop
+        line = substring(config, found, $search_end)
+        config = substring(config, $search_end)
+        line = replace_in_string(line, "[\\r\\n]+", "", "regex")    # chomp
+        if (debug >= 2) {
+            t_print("LINE #" line_num ": " line "\n")
         }
 
-        # convert []
-        regexp = "(.*)\\[(.+)\\](.*)"
-        found = search_string(glob, regexp, 0, "regex")
-        if (found != -1) {
-            # extract content inside {}
-            braced = replace_in_string(glob, regexp, "\\2", "regex")
-            if (debug >= 2)
-                t_print("brace: " braced "\n")
+        ### parse line and process per data found
 
-            # convert '!'
-            carrot = replace_in_string(braced, "!", "^")
-            if (carrot != "") {
-                braced_regexp = "\\1[" carrot "]\\3"
-                replaced = replace_in_string(glob, regexp, braced_regexp, "regex")
-                if (replaced != "") {
-                    if (debug >= 2)
-                        t_print("glob (brace): " replaced "\n")
-                    glob = replaced
+        # skip comment and blank lines
+        comment = search_string(line, "^\\s*[#;]", 0, "regex")
+        if (comment != -1) {
+            if (debug >= 2)
+                t_print("line is comment\n")
+            continue
+        }
+
+        blanks = search_string(line, "^\\s*[\r\n]", 0, "regex")
+        if (blanks != -1) {
+            if (debug >= 2)
+                t_print("line is blank\n")
+            continue
+        }
+
+        # check sections
+        regexp = "\\[(.+)\\]"
+        found = search_string(line, regexp, 0, "regex")
+        if (found != -1) {
+            # extract glob pattern for conversion to regexp
+            section = substring(line, found, $search_end)
+            glob = replace_in_string(section, regexp, "\\1", "regex")
+            if (debug >= 2)
+                t_print("glob: " glob "\n")
+
+            # convert brace extention
+            regexp = "(.*)\\{(.+)\\}(.*)"
+            found = search_string(glob, regexp, 0, "regex")
+            if (found != -1) {
+                # extract content inside {}
+                braced = replace_in_string(glob, regexp, "\\2", "regex")
+                if (debug >= 2)
+                    t_print("brace: " braced "\n")
+
+                # capture number range
+                use_num_range = 0
+                num_regexp = "^([+-]?\\d+)\\.\\.([+-]?\\d+)"
+                num_range = search_string(braced, num_regexp, 0, "regex")
+                if (num_range != -1) {
+                    use_num_range = 1
+                    start_num = replace_in_string(braced, num_regexp, "\\1", "regex")
+                    stop_num = replace_in_string(braced, num_regexp, "\\2", "regex")
+                    braced_regexp = "\\1(\\\\d+)\\3"
+                    glob = replace_in_string(glob, regexp, braced_regexp, "regex")
+                }
+
+                # replace commas with vertical bar
+                comma2or = replace_in_string(braced, ",", "|")
+                if (comma2or != "") {
+                    # replace [] with regexp
+                    braced_regexp = "\\1<(" comma2or ")>\\3"
+                    glob = replace_in_string(glob, regexp, braced_regexp, "regex")
+                }
+
+                if (debug >= 2)
+                    t_print("glob (brace): " glob "\n")
+            }
+
+            # convert []
+            regexp = "(.*)\\[(.+)\\](.*)"
+            found = search_string(glob, regexp, 0, "regex")
+            if (found != -1) {
+                # extract content inside {}
+                braced = replace_in_string(glob, regexp, "\\2", "regex")
+                if (debug >= 2)
+                    t_print("brace: " braced "\n")
+
+                # convert '!'
+                carrot = replace_in_string(braced, "!", "^")
+                if (carrot != "") {
+                    braced_regexp = "\\1[" carrot "]\\3"
+                    replaced = replace_in_string(glob, regexp, braced_regexp, "regex")
+                    if (replaced != "") {
+                        if (debug >= 2)
+                            t_print("glob (brace): " replaced "\n")
+                        glob = replaced
+                    }
                 }
             }
-        }
 
-        # convert regular globs
-        replaced = replace_in_string(glob, ".", "\\.")
-        if (replaced != "") {
-            glob = replaced
-            if (debug >= 2)
-                t_print("glob (.): " glob "\n")
-        }
-        replaced = replace_in_string(glob, "?", ".")
-        if (replaced != "") {
-            glob = replaced
-            if (debug >= 2)
-                t_print("glob (?): " glob)
-        }
-        replaced = replace_in_string(glob, "*", ".*?")
-        if (replaced != "") {
-            glob = replaced
-            if (debug >= 2)
-                t_print("glob (*): " glob "\n")
-        }
-
-        # wrap up regexp
-        replaced = replace_in_string(glob, "(.*)", "^\\1$", "regex")
-        if (replaced != "") {
-            glob = replaced
-            if (debug >= 2)
-                t_print("glob (wrap): " glob "\n")
-        }
-
-        # check file name against glob pattern
-        found = search_string($file_name, glob, 0, "regex")
-        if (found == -1) {
-            file_matched = 0
-        }
-        else {
-            if (use_num_range) {
-                num = replace_in_string($file_name, glob, "\\1", "regex")
+            # convert regular globs
+            replaced = replace_in_string(glob, ".", "\\.")
+            if (replaced != "") {
+                glob = replaced
                 if (debug >= 2)
-                    t_print("checking if " num " in " start_num ".." stop_num "\n")
-                if (num >= start_num && num <= stop_num)
-                    file_matched = 1
-                else
-                    file_matched = 0
+                    t_print("glob (.): " glob "\n")
+            }
+            replaced = replace_in_string(glob, "?", ".")
+            if (replaced != "") {
+                glob = replaced
+                if (debug >= 2)
+                    t_print("glob (?): " glob)
+            }
+            replaced = replace_in_string(glob, "*", ".*?")
+            if (replaced != "") {
+                glob = replaced
+                if (debug >= 2)
+                    t_print("glob (*): " glob "\n")
+            }
+
+            # wrap up regexp
+            replaced = replace_in_string(glob, "(.*)", "^\\1$", "regex")
+            if (replaced != "") {
+                glob = replaced
+                if (debug >= 2)
+                    t_print("glob (wrap): " glob "\n")
+            }
+
+            # check file name against glob pattern
+            found = search_string($file_name, glob, 0, "regex")
+            if (found == -1) {
+                file_matched = 0
             }
             else {
-                file_matched = 1
+                if (use_num_range) {
+                    num = replace_in_string($file_name, glob, "\\1", "regex")
+                    if (debug >= 2)
+                        t_print("checking if " num " in " start_num ".." stop_num "\n")
+                    if (num >= start_num && num <= stop_num)
+                        file_matched = 1
+                    else
+                        file_matched = 0
+                }
+                else {
+                    file_matched = 1
+                }
+            }
+
+            if (debug >= 1) {
+                if (file_matched)
+                    t_print($file_name " matches " section "\n")
+                else
+                    t_print($file_name " does not match " section "\n")
             }
         }
 
-        if (debug >= 1) {
-            if (file_matched)
-                t_print($file_name " matches " section "\n")
-            else
-                t_print($file_name " does not match " section "\n")
+        # check & apply properties if file matches section pattern
+        if (!file_matched)
+            continue
+
+        # get property pairs
+        regexp = "(\\w+)\\s*=\\s*(.+)"
+        found = search_string(line, regexp, 0, "regex")
+        if (found != -1) {
+            key = replace_in_string(line, regexp, "\\1", "regex")
+            value = replace_in_string(line, regexp, "\\2", "regex")
+            if (debug >= 2)
+                t_print("property: " key " => " value "\n")
         }
-    }
+        else {
+            continue
+        }
 
-    # check & apply properties if file matches section pattern
-    if (!file_matched)
-        continue
+        # apply properties
+        if (key == "tab_width") {
+            if (debug >= 1)
+                t_print("set " key " to " value "\n")
 
-    # get property pairs
-    regexp = "(\\w+)\\s*=\\s*(.+)"
-    found = search_string(line, regexp, 0, "regex")
-    if (found != -1) {
-        key = replace_in_string(line, regexp, "\\1", "regex")
-        value = replace_in_string(line, regexp, "\\2", "regex")
-        if (debug >= 2)
-            t_print("property: " key " => " value "\n")
-    }
-    else {
-        continue
-    }
-
-    # apply properties
-    if (key == "tab_width") {
-        if (debug >= 1)
-            t_print("set " key " to " value "\n")
-
-        set_tab_dist(value)
-    }
-    else if (key == "indent_size") {
-        if (debug >= 1)
-            t_print("set " key " to " value "\n")
-
-        if ($em_tab_dist > 0)
-            set_em_tab_dist(value)
-        else
             set_tab_dist(value)
-    }
-    else if (key == "indent_style") {
-        if (debug >= 1)
-            t_print("set " key " to " value "\n")
-
-        indent_style = tolower(value)
-        if (indent_style == "space") {
-            if ($em_tab_dist <= 0)
-                set_em_tab_dist($tab_dist)
-            set_use_tabs(0)
         }
-        else if (indent_style == "tab") {
+        else if (key == "indent_size") {
+            if (debug >= 1)
+                t_print("set " key " to " value "\n")
+
             if ($em_tab_dist > 0)
-                set_tab_dist($em_tab_dist)
-            set_em_tab_dist(0)  # use hard tab to indent
-            set_use_tabs(1)
-        } else {
-            t_print("Unknown indent_style: " indent_style "\n")
+                set_em_tab_dist(value)
+            else
+                set_tab_dist(value)
+        }
+        else if (key == "indent_style") {
+            if (debug >= 1)
+                t_print("set " key " to " value "\n")
+
+            indent_style = tolower(value)
+            if (indent_style == "space") {
+                if ($em_tab_dist <= 0)
+                    set_em_tab_dist($tab_dist)
+                set_use_tabs(0)
+            }
+            else if (indent_style == "tab") {
+                if ($em_tab_dist > 0)
+                    set_tab_dist($em_tab_dist)
+                set_em_tab_dist(0)  # use hard tab to indent
+                set_use_tabs(1)
+            } else {
+                t_print("Unknown indent_style: " indent_style "\n")
+            }
         }
     }
-}
-
 }
