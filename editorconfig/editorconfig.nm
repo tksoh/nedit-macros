@@ -63,6 +63,13 @@ for (i=0; i<file_count; i++) {
     # read config data
     config = read_file(config_path)
 
+    # flag if file is root (root=true)
+    root = search_string(config, "^\\s*root\\s*=\\strue>", 0, "regex")
+    if (root != -1) {
+        if (debug >= 1)
+            t_print("root=true\n")
+    }
+
     # start processing .editorconfig data
     file_matched = 0
     line_num = 0
