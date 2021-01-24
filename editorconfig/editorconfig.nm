@@ -24,7 +24,6 @@ for (i=0; i<dir_list[]; i++) {
 # start searching for .editorconfig
 configfile  = ".editorconfig"
 file_count = 0
-file_list[-1] = ""      # initialize array
 for (i=0; i<path_list[]; i++) {
     fn = path_list[] - i -1
     fullpath = path_list[fn] configfile
@@ -47,9 +46,6 @@ for (i=0; i<path_list[]; i++) {
         }
     }
 }
-
-# some cleaning up
-delete file_list[-1]    # remove init data
 
 if (file_count < 1) {
     t_print("\nCan't find " configfile " in all parent directories\n")
