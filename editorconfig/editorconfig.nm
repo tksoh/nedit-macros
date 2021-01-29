@@ -9,6 +9,9 @@
 
 debug = 1       # print debugging messages on terminal
 
+if (debug >= 1)
+    t_print("Loading .editorconfig for " $file_name "\n")
+
 # gather parent directories to check for .editorconfig
 path = replace_in_string($file_path, "/$", "" , "regex", "copy")
 dir_list = split(path, "/")
@@ -57,7 +60,7 @@ for (i=0; i<file_count; i++) {
     fn = file_count - i -1
     config_path = file_list[fn]
     if (debug >= 1)
-        t_print("\n===========\nParsing file #" fn ": " config_path "\n")
+        t_print("===========\nParsing file #" fn ": " config_path "\n")
 
     # read config data
     config = read_file(config_path)
