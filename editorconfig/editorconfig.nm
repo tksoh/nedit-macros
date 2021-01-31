@@ -117,8 +117,8 @@ for (i=0; i<file_count; i++) {
             # extract glob pattern for conversion to regexp
             section = substring(line, found, $search_end)
             glob = replace_in_string(section, regexp, "\\1", "regex")
-            if (debug >= 2)
-                t_print("glob: " glob "\n")
+            if (debug >= 1)
+                t_print("Section: " section "\n")
 
             # convert brace extention
             regexp = "(.*)\\{(.+)\\}(.*)"
@@ -126,8 +126,8 @@ for (i=0; i<file_count; i++) {
             if (found != -1) {
                 # extract content inside {}
                 braced = replace_in_string(glob, regexp, "\\2", "regex")
-                if (debug >= 2)
-                    t_print("brace: " braced "\n")
+                if (debug >= 3)
+                    t_print("- found brace: " braced "\n")
 
                 # capture number range
                 use_num_range = 0
@@ -149,8 +149,8 @@ for (i=0; i<file_count; i++) {
                     glob = replace_in_string(glob, regexp, braced_regexp, "regex")
                 }
 
-                if (debug >= 2)
-                    t_print("glob (brace): " glob "\n")
+                if (debug >= 3)
+                    t_print("- convert brace: " glob "\n")
             }
 
             # convert []
@@ -159,8 +159,8 @@ for (i=0; i<file_count; i++) {
             if (found != -1) {
                 # extract content inside {}
                 braced = replace_in_string(glob, regexp, "\\2", "regex")
-                if (debug >= 2)
-                    t_print("brace: " braced "\n")
+                if (debug >= 3)
+                    t_print("- found bracket: " braced "\n")
 
                 # convert '!'
                 carrot = replace_in_string(braced, "!", "^")
@@ -169,7 +169,7 @@ for (i=0; i<file_count; i++) {
                     replaced = replace_in_string(glob, regexp, braced_regexp, "regex")
                     if (replaced != "") {
                         if (debug >= 2)
-                            t_print("glob (brace): " replaced "\n")
+                            t_print("- convert bracket: " replaced "\n")
                         glob = replaced
                     }
                 }
@@ -179,28 +179,28 @@ for (i=0; i<file_count; i++) {
             replaced = replace_in_string(glob, ".", "\\.")
             if (replaced != "") {
                 glob = replaced
-                if (debug >= 2)
-                    t_print("glob (.): " glob "\n")
+                if (debug >= 3)
+                    t_print("- convert '.': " glob "\n")
             }
             replaced = replace_in_string(glob, "?", ".")
             if (replaced != "") {
                 glob = replaced
-                if (debug >= 2)
-                    t_print("glob (?): " glob)
+                if (debug >= 3)
+                    t_print("- convert '?': " glob)
             }
             replaced = replace_in_string(glob, "*", ".*?")
             if (replaced != "") {
                 glob = replaced
-                if (debug >= 2)
-                    t_print("glob (*): " glob "\n")
+                if (debug >= 3)
+                    t_print("- convert '*': " glob "\n")
             }
 
             # wrap up regexp
             replaced = replace_in_string(glob, "(.*)", "^\\1$", "regex")
             if (replaced != "") {
                 glob = replaced
-                if (debug >= 2)
-                    t_print("glob (wrap): " glob "\n")
+                if (debug >= 3)
+                    t_print("- add anchors: " glob "\n")
             }
 
             # check file name against glob pattern
@@ -225,9 +225,9 @@ for (i=0; i<file_count; i++) {
 
             if (debug >= 1) {
                 if (file_matched)
-                    t_print($file_name " matches " section "\n")
+                    t_print($file_name " match\n")
                 else
-                    t_print($file_name " does not match " section "\n")
+                    t_print($file_name " not match\n")
             }
         }
 
