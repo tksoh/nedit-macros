@@ -242,7 +242,7 @@ for (i=0; i<file_count; i++) {
             key = replace_in_string(line, regexp, "\\1", "regex")
             value = replace_in_string(line, regexp, "\\2", "regex")
             if (debug >= 2)
-                t_print("property: " key " => " value "\n")
+                t_print("Property: " key " = " value "\n")
         }
         else {
             continue
@@ -251,13 +251,13 @@ for (i=0; i<file_count; i++) {
         # apply properties
         if (key == "tab_width") {
             if (debug >= 1)
-                t_print("set " key " to " value "\n")
+                t_print("Applying: " key " = " value "\n")
 
             set_tab_dist(value)
         }
         else if (key == "indent_size") {
             if (debug >= 1)
-                t_print("set " key " to " value "\n")
+                t_print("Applying: " key " = " value "\n")
 
             if ($em_tab_dist > 0)
                 set_em_tab_dist(value)
@@ -266,7 +266,7 @@ for (i=0; i<file_count; i++) {
         }
         else if (key == "indent_style") {
             if (debug >= 1)
-                t_print("set " key " to " value "\n")
+                t_print("Applying: " key " = " value "\n")
 
             indent_style = tolower(value)
             if (indent_style == "space") {
@@ -282,6 +282,10 @@ for (i=0; i<file_count; i++) {
             } else {
                 t_print("Unknown indent_style: " indent_style "\n")
             }
+        }
+        else {
+            if (debug >= 1)
+                t_print("WARNING: property '" key "' not yet supported\n")
         }
     }
 }
